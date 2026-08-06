@@ -1,0 +1,454 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<title>Notová cvičení</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: Arial, Helvetica, sans-serif;
+    margin: 0;
+    background: #eef0f2;
+  }
+  .controls {
+    background: #fff;
+    padding: 14px 20px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    align-items: flex-end;
+    border-bottom: 2px solid #ddd;
+  }
+  .controls label {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 13px;
+    color: #333;
+  }
+  .controls select, .controls input {
+    font-size: 14px;
+    padding: 5px 6px;
+  }
+  .controls input[type=number] { width: 70px; }
+  .controls button {
+    font-size: 14px;
+    padding: 9px 16px;
+    cursor: pointer;
+    border: 1px solid #888;
+    background: #f7f7f7;
+    border-radius: 4px;
+  }
+  .controls button:hover { background: #ececec; }
+  #sheet {
+    background: #fff;
+    max-width: 800px;
+    margin: 24px auto 60px;
+    padding: 24px 24px 10px;
+    box-shadow: 0 0 10px rgba(0,0,0,.15);
+  }
+  .row-svg { display: block; page-break-inside: avoid; }
+  .staff-line { stroke: #000; stroke-width: 1.4; }
+  .ledger-line { stroke: #000; stroke-width: 1.4; }
+  .notehead { fill: #000; }
+  .clef-symbol { fill: #000; }
+  .clef-symbol-trace { fill: #c8c8c8; }
+  .letter-label { font-family: Arial, sans-serif; font-weight: bold; fill: #000; text-anchor: middle; }
+  .answer-box { fill: none; stroke: #999; stroke-width: 1; stroke-dasharray: 3,2; }
+  @media print {
+    .controls { display: none; }
+    body { background: #fff; }
+    #sheet { box-shadow: none; margin: 0; max-width: none; padding: 0; }
+    @page { size: A4; margin: 15mm; }
+  }
+</style>
+</head>
+<body>
+
+<div class="controls no-print">
+  <label>Klíč
+    <select id="clefSelect">
+      <option value="treble">Houslový</option>
+      <option value="bass">Basový</option>
+      <option value="grand">Oba (velká osnova)</option>
+    </select>
+  </label>
+
+  <label>Typ cvičení
+    <select id="exerciseSelect">
+      <option value="blank">Prázdný notový papír</option>
+      <option value="traceClef">Obkreslování klíče</option>
+      <option value="noteToName">Nota &rarr; pojmenuj</option>
+      <option value="nameToNote">Písmeno &rarr; umísti notu</option>
+    </select>
+  </label>
+
+  <label>Rozsah od
+    <select id="rangeLow"></select>
+  </label>
+
+  <label>Rozsah do
+    <select id="rangeHigh"></select>
+  </label>
+
+  <label id="countLabel">Počet not
+    <input id="noteCount" type="number" min="4" max="60" value="16">
+  </label>
+
+  <button id="generateBtn">Nový pracovní list</button>
+  <button id="printBtn">Tisk</button>
+</div>
+
+<div id="sheet"></div>
+
+<script>
+const NOTE_LETTERS = ['C','D','E','F','G','A','B'];
+
+function diatonicIndex(letter, octave) {
+  return octave * 7 + NOTE_LETTERS.indexOf(letter);
+}
+
+function noteLabel(note) { return note.letter + note.octave; }
+
+function parseNoteLabel(label) {
+  return { letter: label[0], octave: parseInt(label.slice(1), 10) };
+}
+
+// Czech "hudební nauka" octave naming (Helmholtz-style): malá oktáva "c",
+// jednočárkovaná "c1" (= střední C), dvoučárkovaná "c2", ... ; velká oktáva
+// "C", kontra "C1", subkontra "C2", ...
+function czechOctaveLabel(letter, octave) {
+  if (octave >= 3) {
+    const marks = octave - 3;
+    return letter.toLowerCase() + (marks > 0 ? marks : '');
+  }
+  const marks = 2 - octave;
+  return letter.toUpperCase() + (marks > 0 ? marks : '');
+}
+
+// Clef outlines taken from the Bravura music font (Steinberg Media Technologies,
+// SIL Open Font License 1.1 — see fonts/OFL.txt). Bravura follows SMuFL, where
+// 1 em = 4 staff spaces (so 1 staff space = 250 font units) and each clef's glyph
+// origin sits on the staff line the clef names: the G line for the treble clef,
+// the F line for the bass clef. That makes the placement exact rather than eyeballed.
+const CLEF_UNITS_PER_SPACE = 250;
+
+const CLEFS = {
+  treble: {
+    label: 'Houslový',
+    topLine: { letter: 'F', octave: 5 },
+    defaultLow: 'C4', defaultHigh: 'G5',
+    // glyph origin on the G line = 2nd staff line from the top counting 0-based
+    refLineFromTop: 3,
+    centerX: 1.342 * CLEF_UNITS_PER_SPACE,
+    path: 'M364 -252c-245 0 -364 165 -364 339c0 202 153 345 297 464c12 10 11 12 9 24c-7 41 -14 106 -14 164c0 104 24 229 98 311c20 22 51 48 65 48c11 0 37 -28 52 -50c41 -60 65 -146 65 -233c0 -153 -82 -280 -190 -381c-6 -6 -8 -7 -6 -19l25 -145c3 -18 3 -18 29 -18c147 0 241 -113 241 -241c0 -113 -67 -198 -168 -238c-14 -6 -15 -5 -13 -17c11 -62 29 -157 29 -214c0 -170 -130 -200 -197 -200c-151 0 -190 98 -190 163c0 62 40 115 107 115c61 0 96 -47 96 -102c0 -58 -36 -85 -67 -94c-23 -7 -32 -10 -32 -17c0 -13 26 -29 80 -29c59 0 159 18 159 166c0 47 -15 134 -27 201c-2 12 -4 11 -15 9c-20 -4 -46 -6 -69 -6zM80 20c0 -139 113 -236 288 -236c20 0 40 2 56 5c15 3 16 3 14 14l-50 298c-2 11 -4 12 -20 8c-61 -17 -100 -60 -100 -117c0 -46 30 -89 72 -107c7 -3 15 -6 15 -13c0 -6 -4 -11 -12 -11c-7 0 -19 3 -27 6c-68 23 -115 87 -115 177c0 85 57 164 145 194c18 6 18 5 15 24l-21 128c-2 11 -4 12 -14 4c-47 -38 -93 -75 -153 -142c-83 -94 -93 -173 -93 -232zM470 943c-61 0 -133 -96 -133 -252c0 -32 2 -66 6 -92c2 -13 6 -14 13 -8c79 69 174 159 174 270c0 55 -27 82 -60 82zM441 117c-12 1 -13 -2 -11 -14l49 -285c2 -12 4 -12 16 -6c56 28 94 79 94 142c0 88 -67 156 -148 163z'
+  },
+  bass: {
+    label: 'Basový',
+    topLine: { letter: 'A', octave: 3 },
+    defaultLow: 'E2', defaultHigh: 'C4',
+    // glyph origin on the F line = 2nd staff line from the top
+    refLineFromTop: 1,
+    centerX: 1.358 * CLEF_UNITS_PER_SPACE,
+    path: 'M8 -635c-9 0 -13 6 -13 12c0 8 6 13 15 18c233 133 371 289 371 568c0 157 -46 261 -152 261c-102 0 -162 -73 -162 -113c0 -10 3 -18 16 -18s23 7 50 7c49 0 96 -40 96 -104c0 -62 -43 -106 -106 -106c-81 0 -123 69 -123 149c0 96 78 223 252 223c173 0 279 -116 279 -290c0 -304 -260 -482 -506 -602c-6 -3 -12 -5 -17 -5zM629 70c-31 0 -55 24 -55 55s24 55 55 55s55 -24 55 -55s-24 -55 -55 -55zM630 -179c-31 0 -54 23 -54 54s23 54 54 54s54 -23 54 -54s-23 -54 -54 -54z'
+  }
+};
+const GRAND_DEFAULT = { low: 'E2', high: 'G5' };
+const MIDDLE_C_INDEX = diatonicIndex('C', 4);
+
+const LINE_GAP = 11;
+const VIEW_W = 740;
+const MARGIN_LEFT = 68;
+const MARGIN_RIGHT = 16;
+// horizontal centre for the clef that opens each staff, left of MARGIN_LEFT
+const CLEF_X = 32;
+const SLOT_COUNT = 8;
+const TOP_PAD = LINE_GAP * 3;
+const BOTTOM_PAD = LINE_GAP * 3 + 40;
+const GRAND_GAP = LINE_GAP * 3;
+const SINGLE_ROW_H = TOP_PAD + 4 * LINE_GAP + BOTTOM_PAD;
+const GRAND_ROW_H = TOP_PAD + 4 * LINE_GAP + GRAND_GAP + 4 * LINE_GAP + BOTTOM_PAD;
+
+function staffY(clefKey, note, y0) {
+  const ref = CLEFS[clefKey].topLine;
+  const refIdx = diatonicIndex(ref.letter, ref.octave);
+  const idx = diatonicIndex(note.letter, note.octave);
+  return y0 + (refIdx - idx) * (LINE_GAP / 2);
+}
+
+function svgEl(tag, attrs) {
+  const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+  for (const k in attrs) el.setAttribute(k, attrs[k]);
+  return el;
+}
+
+function drawStaffLines(svg, x, y0, width) {
+  for (let i = 0; i < 5; i++) {
+    const y = y0 + i * LINE_GAP;
+    svg.appendChild(svgEl('line', { class: 'staff-line', x1: x, y1: y, x2: x + width, y2: y }));
+  }
+}
+
+// Draw a clef centred horizontally on x, with its glyph origin on the staff line
+// the clef names. Font units are y-up, so the transform flips y as it scales.
+function drawClef(svg, clefKey, x, y0, opts) {
+  opts = opts || {};
+  const clef = CLEFS[clefKey];
+  const scale = LINE_GAP / CLEF_UNITS_PER_SPACE;
+  const refY = y0 + clef.refLineFromTop * LINE_GAP;
+  svg.appendChild(svgEl('path', {
+    class: opts.trace ? 'clef-symbol-trace' : 'clef-symbol',
+    d: clef.path,
+    transform: 'translate(' + x.toFixed(2) + ',' + refY.toFixed(2) + ') ' +
+      'scale(' + scale.toFixed(5) + ',' + (-scale).toFixed(5) + ') ' +
+      'translate(' + (-clef.centerX).toFixed(2) + ',0)'
+  }));
+}
+
+function drawClefTraceSequence(svg, clefKey, y0, width) {
+  const usable = width - 20;
+  const slotSpacing = usable / SLOT_COUNT;
+  for (let i = 0; i < SLOT_COUNT; i++) {
+    const x = MARGIN_LEFT + 20 + slotSpacing * (i + 0.5);
+    drawClef(svg, clefKey, x, y0, { centered: true, trace: i > 0 });
+  }
+}
+
+function ledgerLinesFor(y, y0) {
+  const yBottom = y0 + 4 * LINE_GAP;
+  const lines = [];
+  if (y < y0) {
+    const stepsAbove = Math.round((y0 - y) / (LINE_GAP / 2));
+    const count = Math.floor(stepsAbove / 2);
+    for (let i = 1; i <= count; i++) lines.push(y0 - i * LINE_GAP);
+  } else if (y > yBottom) {
+    const stepsBelow = Math.round((y - yBottom) / (LINE_GAP / 2));
+    const count = Math.floor(stepsBelow / 2);
+    for (let i = 1; i <= count; i++) lines.push(yBottom + i * LINE_GAP);
+  }
+  return lines;
+}
+
+function drawNote(svg, x, y, y0) {
+  ledgerLinesFor(y, y0).forEach(function (ly) {
+    svg.appendChild(svgEl('line', {
+      class: 'ledger-line', x1: x - 11, y1: ly, x2: x + 11, y2: ly
+    }));
+  });
+  svg.appendChild(svgEl('ellipse', {
+    class: 'notehead', cx: x, cy: y, rx: 7.2, ry: 5.4,
+    transform: 'rotate(-18 ' + x + ' ' + y + ')'
+  }));
+}
+
+function drawAnswerBox(svg, x, y) {
+  svg.appendChild(svgEl('rect', {
+    class: 'answer-box', x: x - 15, y: y, width: 30, height: 24, rx: 3
+  }));
+}
+
+function drawLetterLabel(svg, x, y, text) {
+  svg.appendChild(svgEl('text', {
+    class: 'letter-label', x: x, y: y, 'font-size': 20
+  })).textContent = text;
+}
+
+function allNotesInRange(lowLabel, highLabel) {
+  const low = parseNoteLabel(lowLabel), high = parseNoteLabel(highLabel);
+  const lowIdx = diatonicIndex(low.letter, low.octave);
+  const highIdx = diatonicIndex(high.letter, high.octave);
+  const notes = [];
+  for (let oct = low.octave; oct <= high.octave + 1; oct++) {
+    NOTE_LETTERS.forEach(function (letter) {
+      const idx = diatonicIndex(letter, oct);
+      if (idx >= lowIdx && idx <= highIdx) notes.push({ letter: letter, octave: oct });
+    });
+  }
+  return notes;
+}
+
+function pickRandomNote(pool, avoidLabel) {
+  if (pool.length === 1) return pool[0];
+  let note;
+  do {
+    note = pool[Math.floor(Math.random() * pool.length)];
+  } while (noteLabel(note) === avoidLabel);
+  return note;
+}
+
+function clefForNote(note) {
+  return diatonicIndex(note.letter, note.octave) >= MIDDLE_C_INDEX ? 'treble' : 'bass';
+}
+
+function makeRowSvg(height) {
+  return svgEl('svg', {
+    class: 'row-svg', viewBox: '0 0 ' + VIEW_W + ' ' + height,
+    width: '100%', height: height
+  });
+}
+
+function renderBlankRow(clefMode) {
+  if (clefMode === 'grand') {
+    const svg = makeRowSvg(GRAND_ROW_H);
+    const yTreble = TOP_PAD, yBass = TOP_PAD + 4 * LINE_GAP + GRAND_GAP;
+    drawStaffLines(svg, MARGIN_LEFT, yTreble, VIEW_W - MARGIN_LEFT - MARGIN_RIGHT);
+    drawStaffLines(svg, MARGIN_LEFT, yBass, VIEW_W - MARGIN_LEFT - MARGIN_RIGHT);
+    drawClef(svg, 'treble', CLEF_X, yTreble);
+    drawClef(svg, 'bass', CLEF_X, yBass);
+    svg.appendChild(svgEl('line', { class: 'staff-line', x1: MARGIN_LEFT, y1: yTreble, x2: MARGIN_LEFT, y2: yBass + 4 * LINE_GAP }));
+    return svg;
+  }
+  const svg = makeRowSvg(SINGLE_ROW_H);
+  drawStaffLines(svg, MARGIN_LEFT, TOP_PAD, VIEW_W - MARGIN_LEFT - MARGIN_RIGHT);
+  drawClef(svg, clefMode, CLEF_X, TOP_PAD);
+  return svg;
+}
+
+function renderClefTraceRow(clefMode) {
+  const width = VIEW_W - MARGIN_LEFT - MARGIN_RIGHT;
+  if (clefMode === 'grand') {
+    const svg = makeRowSvg(GRAND_ROW_H);
+    const yTreble = TOP_PAD, yBass = TOP_PAD + 4 * LINE_GAP + GRAND_GAP;
+    drawStaffLines(svg, MARGIN_LEFT, yTreble, width);
+    drawStaffLines(svg, MARGIN_LEFT, yBass, width);
+    svg.appendChild(svgEl('line', { class: 'staff-line', x1: MARGIN_LEFT, y1: yTreble, x2: MARGIN_LEFT, y2: yBass + 4 * LINE_GAP }));
+    drawClefTraceSequence(svg, 'treble', yTreble, width);
+    drawClefTraceSequence(svg, 'bass', yBass, width);
+    return svg;
+  }
+  const svg = makeRowSvg(SINGLE_ROW_H);
+  drawStaffLines(svg, MARGIN_LEFT, TOP_PAD, width);
+  drawClefTraceSequence(svg, clefMode, TOP_PAD, width);
+  return svg;
+}
+
+function renderExerciseRow(clefMode, exerciseType, slotNotes) {
+  const isGrand = clefMode === 'grand';
+  const height = isGrand ? GRAND_ROW_H : SINGLE_ROW_H;
+  const svg = makeRowSvg(height);
+  const width = VIEW_W - MARGIN_LEFT - MARGIN_RIGHT;
+  const usable = width - 20;
+  const slotSpacing = usable / SLOT_COUNT;
+
+  const yTreble = TOP_PAD;
+  const yBass = TOP_PAD + 4 * LINE_GAP + GRAND_GAP;
+
+  drawStaffLines(svg, MARGIN_LEFT, yTreble, width);
+  if (isGrand) {
+    drawStaffLines(svg, MARGIN_LEFT, yBass, width);
+    drawClef(svg, 'treble', CLEF_X, yTreble);
+    drawClef(svg, 'bass', CLEF_X, yBass);
+    svg.appendChild(svgEl('line', { class: 'staff-line', x1: MARGIN_LEFT, y1: yTreble, x2: MARGIN_LEFT, y2: yBass + 4 * LINE_GAP }));
+  } else {
+    drawClef(svg, clefMode, CLEF_X, yTreble);
+  }
+
+  slotNotes.forEach(function (note, i) {
+    if (!note) return;
+    const x = MARGIN_LEFT + 20 + slotSpacing * (i + 0.5);
+    const targetClef = isGrand ? clefForNote(note) : clefMode;
+    const y0 = isGrand && targetClef === 'bass' ? yBass : yTreble;
+    const y = staffY(targetClef, note, y0);
+
+    if (exerciseType === 'noteToName') {
+      drawNote(svg, x, y, y0);
+      drawAnswerBox(svg, x, (isGrand ? yBass : yTreble) + 4 * LINE_GAP + 3 * LINE_GAP + 6);
+    } else if (exerciseType === 'nameToNote') {
+      drawLetterLabel(svg, x, yTreble - 16, czechOctaveLabel(note.letter, note.octave));
+    }
+  });
+
+  return svg;
+}
+
+function buildRangeOptions(select) {
+  select.innerHTML = '';
+  for (let oct = 1; oct <= 7; oct++) {
+    NOTE_LETTERS.forEach(function (letter) {
+      const label = letter + oct;
+      const opt = svgElHtmlOption(label, czechOctaveLabel(letter, oct));
+      select.appendChild(opt);
+    });
+  }
+}
+function svgElHtmlOption(value, text) {
+  const opt = document.createElement('option');
+  opt.value = value; opt.textContent = text;
+  return opt;
+}
+
+function applyDefaultRange(clefMode) {
+  const rangeLow = document.getElementById('rangeLow');
+  const rangeHigh = document.getElementById('rangeHigh');
+  const def = clefMode === 'grand' ? GRAND_DEFAULT : CLEFS[clefMode];
+  rangeLow.value = clefMode === 'grand' ? def.low : def.defaultLow;
+  rangeHigh.value = clefMode === 'grand' ? def.high : def.defaultHigh;
+}
+
+function render() {
+  const clefMode = document.getElementById('clefSelect').value;
+  const exerciseType = document.getElementById('exerciseSelect').value;
+  const rangeLow = document.getElementById('rangeLow').value;
+  const rangeHigh = document.getElementById('rangeHigh').value;
+  const noteCount = parseInt(document.getElementById('noteCount').value, 10) || 16;
+
+  const sheet = document.getElementById('sheet');
+  sheet.innerHTML = '';
+
+  if (exerciseType === 'blank') {
+    const rows = clefMode === 'grand' ? 6 : 9;
+    for (let r = 0; r < rows; r++) sheet.appendChild(renderBlankRow(clefMode));
+    return;
+  }
+
+  if (exerciseType === 'traceClef') {
+    const rows = clefMode === 'grand' ? 6 : 9;
+    for (let r = 0; r < rows; r++) sheet.appendChild(renderClefTraceRow(clefMode));
+    return;
+  }
+
+  const pool = allNotesInRange(rangeLow, rangeHigh);
+  const notes = [];
+  let prevLabel = null;
+  for (let i = 0; i < noteCount; i++) {
+    const note = pickRandomNote(pool, prevLabel);
+    notes.push(note);
+    prevLabel = noteLabel(note);
+  }
+
+  const rows = Math.ceil(noteCount / SLOT_COUNT);
+  for (let r = 0; r < rows; r++) {
+    const slice = notes.slice(r * SLOT_COUNT, r * SLOT_COUNT + SLOT_COUNT);
+    while (slice.length < SLOT_COUNT) slice.push(null);
+    sheet.appendChild(renderExerciseRow(clefMode, exerciseType, slice));
+  }
+}
+
+function updateCountVisibility() {
+  const exerciseType = document.getElementById('exerciseSelect').value;
+  const hide = exerciseType === 'blank' || exerciseType === 'traceClef';
+  document.getElementById('countLabel').style.display = hide ? 'none' : '';
+}
+
+document.getElementById('clefSelect').addEventListener('change', function () {
+  applyDefaultRange(this.value);
+  render();
+});
+document.getElementById('exerciseSelect').addEventListener('change', function () {
+  updateCountVisibility();
+  render();
+});
+document.getElementById('rangeLow').addEventListener('change', render);
+document.getElementById('rangeHigh').addEventListener('change', render);
+document.getElementById('noteCount').addEventListener('change', render);
+document.getElementById('generateBtn').addEventListener('click', render);
+document.getElementById('printBtn').addEventListener('click', function () { window.print(); });
+
+buildRangeOptions(document.getElementById('rangeLow'));
+buildRangeOptions(document.getElementById('rangeHigh'));
+applyDefaultRange('treble');
+updateCountVisibility();
+render();
+</script>
+</body>
+</html>
