@@ -21,7 +21,7 @@ server ani instalace.
 | Typ | Co list obsahuje |
 |---|---|
 | Prázdný notový papír | Jen čisté osnovy s klíčem, bez not |
-| Obkreslování klíče | Plný klíč jako vzor, za ním světle šedé kopie k obtažení tužkou |
+| Obkreslování klíče | Klíč tenkou linkou — první černý jako vzor, další světle šedé k obtažení tužkou |
 | Nota → pojmenuj | Nota na osnově a prázdný rámeček na zapsání názvu tónu |
 | Písmeno → umísti notu | Název tónu nad prázdnou osnovou, nota se dokresluje |
 
@@ -70,6 +70,18 @@ přesné posazení klíče na osnovu:
   `g` (2. odspodu), basový klíč na lince `f` (2. odshora).
 
 Pozice klíče je proto spočítaná, ne odhadnutá.
+
+### Středová linka pro obkreslování
+
+Cvičení „Obkreslování klíče“ nepoužívá plný tvar klíče — vybarvovat širokou plochu
+tužkou není obtahování. Místo toho se kreslí **středová linka** (osa) klíče: tenká
+čára vedená středem tahu.
+
+Ta je odvozená z obrysu Bravury programově: tvar se vykreslí do rastru, ztenčí se
+algoritmem Zhang-Suen na linku širokou jeden pixel, ta se převede na křivku,
+odstraní se falešné výběžky a výsledek se vyhladí na oblouky. Výsledná cesta je
+v `index.html` uložená jako `tracePath` u každého klíče. Tvar tedy odpovídá
+skutečnému notopisnému klíči, jen je tenký.
 
 ## Licence
 

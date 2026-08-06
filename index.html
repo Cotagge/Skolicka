@@ -52,7 +52,9 @@
   .ledger-line { stroke: #000; stroke-width: 1.4; }
   .notehead { fill: #000; }
   .clef-symbol { fill: #000; }
-  .clef-symbol-trace { fill: #c8c8c8; }
+  .clef-trace-model, .clef-trace-copy { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+  .clef-trace-model { stroke: #000; }
+  .clef-trace-copy { stroke: #b4b4b4; }
   .letter-label { font-family: Arial, sans-serif; font-weight: bold; fill: #000; text-anchor: middle; }
   .answer-box { fill: none; stroke: #999; stroke-width: 1; stroke-dasharray: 3,2; }
   @media print {
@@ -141,7 +143,9 @@ const CLEFS = {
     // glyph origin on the G line = 2nd staff line from the top counting 0-based
     refLineFromTop: 3,
     centerX: 1.342 * CLEF_UNITS_PER_SPACE,
-    path: 'M364 -252c-245 0 -364 165 -364 339c0 202 153 345 297 464c12 10 11 12 9 24c-7 41 -14 106 -14 164c0 104 24 229 98 311c20 22 51 48 65 48c11 0 37 -28 52 -50c41 -60 65 -146 65 -233c0 -153 -82 -280 -190 -381c-6 -6 -8 -7 -6 -19l25 -145c3 -18 3 -18 29 -18c147 0 241 -113 241 -241c0 -113 -67 -198 -168 -238c-14 -6 -15 -5 -13 -17c11 -62 29 -157 29 -214c0 -170 -130 -200 -197 -200c-151 0 -190 98 -190 163c0 62 40 115 107 115c61 0 96 -47 96 -102c0 -58 -36 -85 -67 -94c-23 -7 -32 -10 -32 -17c0 -13 26 -29 80 -29c59 0 159 18 159 166c0 47 -15 134 -27 201c-2 12 -4 11 -15 9c-20 -4 -46 -6 -69 -6zM80 20c0 -139 113 -236 288 -236c20 0 40 2 56 5c15 3 16 3 14 14l-50 298c-2 11 -4 12 -20 8c-61 -17 -100 -60 -100 -117c0 -46 30 -89 72 -107c7 -3 15 -6 15 -13c0 -6 -4 -11 -12 -11c-7 0 -19 3 -27 6c-68 23 -115 87 -115 177c0 85 57 164 145 194c18 6 18 5 15 24l-21 128c-2 11 -4 12 -14 4c-47 -38 -93 -75 -153 -142c-83 -94 -93 -173 -93 -232zM470 943c-61 0 -133 -96 -133 -252c0 -32 2 -66 6 -92c2 -13 6 -14 13 -8c79 69 174 159 174 270c0 55 -27 82 -60 82zM441 117c-12 1 -13 -2 -11 -14l49 -285c2 -12 4 -12 16 -6c56 28 94 79 94 142c0 88 -67 156 -148 163z'
+    path: 'M364 -252c-245 0 -364 165 -364 339c0 202 153 345 297 464c12 10 11 12 9 24c-7 41 -14 106 -14 164c0 104 24 229 98 311c20 22 51 48 65 48c11 0 37 -28 52 -50c41 -60 65 -146 65 -233c0 -153 -82 -280 -190 -381c-6 -6 -8 -7 -6 -19l25 -145c3 -18 3 -18 29 -18c147 0 241 -113 241 -241c0 -113 -67 -198 -168 -238c-14 -6 -15 -5 -13 -17c11 -62 29 -157 29 -214c0 -170 -130 -200 -197 -200c-151 0 -190 98 -190 163c0 62 40 115 107 115c61 0 96 -47 96 -102c0 -58 -36 -85 -67 -94c-23 -7 -32 -10 -32 -17c0 -13 26 -29 80 -29c59 0 159 18 159 166c0 47 -15 134 -27 201c-2 12 -4 11 -15 9c-20 -4 -46 -6 -69 -6zM80 20c0 -139 113 -236 288 -236c20 0 40 2 56 5c15 3 16 3 14 14l-50 298c-2 11 -4 12 -20 8c-61 -17 -100 -60 -100 -117c0 -46 30 -89 72 -107c7 -3 15 -6 15 -13c0 -6 -4 -11 -12 -11c-7 0 -19 3 -27 6c-68 23 -115 87 -115 177c0 85 57 164 145 194c18 6 18 5 15 24l-21 128c-2 11 -4 12 -14 4c-47 -38 -93 -75 -153 -142c-83 -94 -93 -173 -93 -232zM470 943c-61 0 -133 -96 -133 -252c0 -32 2 -66 6 -92c2 -13 6 -14 13 -8c79 69 174 159 174 270c0 55 -27 82 -60 82zM441 117c-12 1 -13 -2 -11 -14l49 -285c2 -12 4 -12 16 -6c56 28 94 79 94 142c0 88 -67 156 -148 163z',
+    // centreline (medial axis) of the outline above, for tracing with a pencil
+    tracePath: 'M314 460C309 458 299 461 282 449C265 437 235 410 213 389C190 367 166 344 146 319C125 295 104 265 90 243C76 221 70 210 62 188C54 166 45 130 42 111C38 93 38 101 39 79C41 57 46 5 51 -20C55 -45 62 -58 67 -71C72 -85 72 -86 83 -101C95 -116 121 -147 136 -161C151 -175 157 -178 173 -187C190 -196 214 -207 236 -214C257 -221 276 -225 300 -228C325 -231 355 -234 381 -233C407 -232 444 -227 457 -224C471 -221 462 -217 462 -214C462 -212 459 -216 457 -210C456 -203 463 -225 455 -175C447 -125 417 37 409 88C401 140 413 121 407 135C400 148 378 165 372 171M444 999C454 994 494 980 508 971C523 962 523 959 529 946C535 932 542 917 545 892C548 868 552 831 548 800C543 769 531 734 520 708C509 681 501 668 481 641C460 613 417 562 397 543C378 525 375 527 363 532C350 537 332 550 323 574C315 597 316 638 314 671C313 703 313 748 314 770C315 792 314 785 319 805C323 824 333 864 342 888C351 911 362 930 372 946C382 961 392 971 404 980C416 989 437 996 444 999M363 532C362 528 363 520 356 511C349 502 328 488 321 479C314 470 308 469 314 458C320 447 345 444 356 414C367 384 375 307 379 278C383 248 374 251 381 236C388 222 414 199 421 190C427 181 427 185 421 183C414 181 389 179 379 176C369 173 371 170 363 167C354 164 338 163 328 160C318 156 315 156 303 146C290 136 266 115 254 98C243 80 235 63 233 42C231 21 238 -8 243 -27C247 -46 252 -58 261 -71C270 -85 285 -99 298 -108C311 -117 333 -123 340 -127M462 -217C463 -217 466 -213 467 -221C468 -230 465 -239 469 -268C473 -296 488 -358 492 -395C496 -431 495 -465 494 -487C494 -509 493 -509 488 -524C482 -539 471 -564 460 -579C449 -594 435 -605 421 -614C406 -623 391 -628 374 -633C357 -637 336 -639 319 -640C302 -640 283 -637 270 -635C257 -633 249 -630 240 -626C231 -621 224 -621 217 -609C210 -598 202 -571 199 -559C196 -547 196 -548 199 -538C201 -528 209 -508 215 -499C221 -489 232 -483 236 -480M421 185C435 183 484 176 506 169C528 162 541 152 555 141C568 131 581 116 589 107C597 98 597 101 603 86C609 71 624 47 626 19C628 -9 620 -56 615 -80C609 -105 600 -117 594 -129C587 -141 585 -142 575 -152C565 -162 546 -180 534 -189C521 -198 512 -202 501 -205C491 -209 477 -207 469 -210C461 -213 457 -221 455 -224'
   },
   bass: {
     label: 'Basový',
@@ -150,7 +154,8 @@ const CLEFS = {
     // glyph origin on the F line = 2nd staff line from the top
     refLineFromTop: 1,
     centerX: 1.358 * CLEF_UNITS_PER_SPACE,
-    path: 'M8 -635c-9 0 -13 6 -13 12c0 8 6 13 15 18c233 133 371 289 371 568c0 157 -46 261 -152 261c-102 0 -162 -73 -162 -113c0 -10 3 -18 16 -18s23 7 50 7c49 0 96 -40 96 -104c0 -62 -43 -106 -106 -106c-81 0 -123 69 -123 149c0 96 78 223 252 223c173 0 279 -116 279 -290c0 -304 -260 -482 -506 -602c-6 -3 -12 -5 -17 -5zM629 70c-31 0 -55 24 -55 55s24 55 55 55s55 -24 55 -55s-24 -55 -55 -55zM630 -179c-31 0 -54 23 -54 54s23 54 54 54s54 -23 54 -54s-23 -54 -54 -54z'
+    path: 'M8 -635c-9 0 -13 6 -13 12c0 8 6 13 15 18c233 133 371 289 371 568c0 157 -46 261 -152 261c-102 0 -162 -73 -162 -113c0 -10 3 -18 16 -18s23 7 50 7c49 0 96 -40 96 -104c0 -62 -43 -106 -106 -106c-81 0 -123 69 -123 149c0 96 78 223 252 223c173 0 279 -116 279 -290c0 -304 -260 -482 -506 -602c-6 -3 -12 -5 -17 -5zM629 70c-31 0 -55 24 -55 55s24 55 55 55s55 -24 55 -55s-24 -55 -55 -55zM630 -179c-31 0 -54 23 -54 54s23 54 54 54s54 -23 54 -54s-23 -54 -54 -54z',
+    tracePath: 'M122 -4C117 0 106 13 96 20C86 27 72 31 62 38C53 45 44 54 40 62C36 69 37 70 38 83C40 95 45 123 49 137C54 151 59 158 67 167C75 177 87 188 96 196C105 204 109 209 123 216C137 222 165 233 181 238C197 243 205 242 219 243C234 244 252 245 269 243C286 240 307 235 322 228C337 222 348 213 359 204C369 196 376 188 384 179C392 169 399 159 407 147C414 134 422 118 427 102C433 86 438 69 442 49C446 29 450 -1 452 -20C453 -39 452 -45 450 -63C448 -81 446 -104 442 -127C438 -150 432 -177 424 -201C417 -225 409 -247 397 -271C385 -296 365 -328 351 -350C336 -372 326 -384 309 -403C292 -422 268 -446 246 -465C225 -484 204 -500 182 -516C161 -532 144 -544 115 -561C86 -579 27 -611 9 -621M627 70L631 70M628 -179L632 -179'
   }
 };
 const GRAND_DEFAULT = { low: 'E2', high: 'G5' };
@@ -189,28 +194,40 @@ function drawStaffLines(svg, x, y0, width) {
   }
 }
 
-// Draw a clef centred horizontally on x, with its glyph origin on the staff line
-// the clef names. Font units are y-up, so the transform flips y as it scales.
-function drawClef(svg, clefKey, x, y0, opts) {
-  opts = opts || {};
+// Glyph units are y-up, so the transform flips y while scaling font units to px.
+function clefTransform(clefKey, x, y0) {
   const clef = CLEFS[clefKey];
   const scale = LINE_GAP / CLEF_UNITS_PER_SPACE;
   const refY = y0 + clef.refLineFromTop * LINE_GAP;
+  return 'translate(' + x.toFixed(2) + ',' + refY.toFixed(2) + ') ' +
+    'scale(' + scale.toFixed(5) + ',' + (-scale).toFixed(5) + ') ' +
+    'translate(' + (-clef.centerX).toFixed(2) + ',0)';
+}
+
+// Draw a clef centred horizontally on x, with its glyph origin on the staff line
+// the clef names.
+function drawClef(svg, clefKey, x, y0) {
   svg.appendChild(svgEl('path', {
-    class: opts.trace ? 'clef-symbol-trace' : 'clef-symbol',
-    d: clef.path,
-    transform: 'translate(' + x.toFixed(2) + ',' + refY.toFixed(2) + ') ' +
-      'scale(' + scale.toFixed(5) + ',' + (-scale).toFixed(5) + ') ' +
-      'translate(' + (-clef.centerX).toFixed(2) + ',0)'
+    class: 'clef-symbol',
+    d: CLEFS[clefKey].path,
+    transform: clefTransform(clefKey, x, y0)
   }));
 }
 
+// Tracing row: a thin centreline the child can follow with a pencil — the first
+// one solid black as the model, the rest light grey to trace over. Stroke widths
+// are given in glyph units so the transform scales them to the intended px width.
 function drawClefTraceSequence(svg, clefKey, y0, width) {
-  const usable = width - 20;
-  const slotSpacing = usable / SLOT_COUNT;
+  const perPx = CLEF_UNITS_PER_SPACE / LINE_GAP;
+  const slotSpacing = (width - 20) / SLOT_COUNT;
   for (let i = 0; i < SLOT_COUNT; i++) {
     const x = MARGIN_LEFT + 20 + slotSpacing * (i + 0.5);
-    drawClef(svg, clefKey, x, y0, { centered: true, trace: i > 0 });
+    svg.appendChild(svgEl('path', {
+      class: i === 0 ? 'clef-trace-model' : 'clef-trace-copy',
+      d: CLEFS[clefKey].tracePath,
+      'stroke-width': ((i === 0 ? 1.5 : 1.1) * perPx).toFixed(1),
+      transform: clefTransform(clefKey, x, y0)
+    }));
   }
 }
 
