@@ -2,7 +2,7 @@
 <html lang="cs">
 <head>
 <meta charset="utf-8">
-<title>Notová cvičení</title>
+<title>Školička — pracovní listy</title>
 <style>
   * { box-sizing: border-box; }
   body {
@@ -57,10 +57,72 @@
   .clef-trace-copy { stroke: #b4b4b4; }
   .letter-label { font-family: Arial, sans-serif; font-weight: bold; fill: #000; text-anchor: middle; }
   .answer-box { fill: none; stroke: #999; stroke-width: 1; stroke-dasharray: 3,2; }
+
+  /* --- math worksheet --- */
+  .ctrl-group { display: contents; }
+  .ctrl-group[hidden] { display: none; }
+  .sheet-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    border-bottom: 2px solid #333;
+    padding-bottom: 6px;
+    margin-bottom: 18px;
+  }
+  .sheet-header h1 { font-size: 18px; margin: 0; }
+  .sheet-header .fill-line { font-size: 13px; color: #444; }
+  .math-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px 18px;
+  }
+  .math-task {
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    padding: 8px 12px 12px;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+  .math-task-no { font-size: 12px; color: #999; }
+  .fruit-line {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 44px;
+  }
+  /* max-width drží nejvýš pět kusů v řadě, další se zalomí pod sebe */
+  .fruit-pile { display: flex; gap: 3px; flex-wrap: wrap; max-width: 152px; }
+  .fruit {
+    width: 28px;
+    height: 28px;
+    stroke: #333;
+    stroke-width: 3;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+  }
+  .fruit-cut .fruit-body { opacity: .3; }
+  .fruit-cross { fill: none; stroke: #c62828; stroke-width: 8; }
+  .pile-op { font-size: 28px; font-weight: bold; color: #333; padding: 0 2px; }
+  .math-eq {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+    font-size: 30px;
+    font-weight: bold;
+  }
+  .eq-box {
+    width: 42px;
+    height: 42px;
+    border: 2px dashed #999;
+    border-radius: 6px;
+  }
+
   @media print {
     .controls { display: none; }
     body { background: #fff; }
     #sheet { box-shadow: none; margin: 0; max-width: none; padding: 0; }
+    .math-task { border-color: #999; }
     @page { size: A4; margin: 15mm; }
   }
 </style>
@@ -68,34 +130,93 @@
 <body>
 
 <div class="controls no-print">
-  <label>Klíč
-    <select id="clefSelect">
-      <option value="treble">Houslový</option>
-      <option value="bass">Basový</option>
-      <option value="grand">Oba (velká osnova)</option>
+  <label>Předmět
+    <select id="subjectSelect">
+      <option value="music">Hudební nauka</option>
+      <option value="math">Matematika</option>
     </select>
   </label>
 
-  <label>Typ cvičení
-    <select id="exerciseSelect">
-      <option value="blank">Prázdný notový papír</option>
-      <option value="traceClef">Obkreslování klíče</option>
-      <option value="noteToName">Nota &rarr; pojmenuj</option>
-      <option value="nameToNote">Písmeno &rarr; umísti notu</option>
-    </select>
-  </label>
+  <div class="ctrl-group" id="musicControls">
+    <label>Klíč
+      <select id="clefSelect">
+        <option value="treble">Houslový</option>
+        <option value="bass">Basový</option>
+        <option value="grand">Oba (velká osnova)</option>
+      </select>
+    </label>
 
-  <label>Rozsah od
-    <select id="rangeLow"></select>
-  </label>
+    <label>Typ cvičení
+      <select id="exerciseSelect">
+        <option value="blank">Prázdný notový papír</option>
+        <option value="traceClef">Obkreslování klíče</option>
+        <option value="noteToName">Nota &rarr; pojmenuj</option>
+        <option value="nameToNote">Písmeno &rarr; umísti notu</option>
+      </select>
+    </label>
 
-  <label>Rozsah do
-    <select id="rangeHigh"></select>
-  </label>
+    <label>Rozsah od
+      <select id="rangeLow"></select>
+    </label>
 
-  <label id="countLabel">Počet not
-    <input id="noteCount" type="number" min="4" max="60" value="16">
-  </label>
+    <label>Rozsah do
+      <select id="rangeHigh"></select>
+    </label>
+
+    <label id="countLabel">Počet not
+      <input id="noteCount" type="number" min="4" max="60" value="16">
+    </label>
+  </div>
+
+  <div class="ctrl-group" id="mathControls" hidden>
+    <label>Typ úlohy
+      <select id="mathTypeSelect">
+        <option value="add">Sčítání</option>
+        <option value="sub">Odčítání</option>
+        <option value="addsub" selected>Sčítání i odčítání</option>
+        <option value="sign">Doplň znaménko</option>
+        <option value="mix">Vše dohromady</option>
+      </select>
+    </label>
+
+    <label>Číselný obor
+      <select id="mathMaxSelect">
+        <option value="5">do 5</option>
+        <option value="10" selected>do 10</option>
+        <option value="20">do 20</option>
+      </select>
+    </label>
+
+    <label>Znázornění
+      <select id="mathShowSelect">
+        <option value="both" selected>Ovoce i čísla</option>
+        <option value="fruit">Jen ovoce</option>
+        <option value="numbers">Jen čísla</option>
+      </select>
+    </label>
+
+    <label id="mathSubLabel">Odčítání
+      <select id="mathSubStyleSelect">
+        <option value="cross" selected>Škrtání + doplň čísla</option>
+        <option value="piles">Dvě hromádky s mínus</option>
+      </select>
+    </label>
+
+    <label id="mathFruitLabel">Ovoce
+      <select id="mathFruitSelect">
+        <option value="random">Náhodné</option>
+        <option value="apple">Jablka</option>
+        <option value="pear">Hrušky</option>
+        <option value="cherry">Třešně</option>
+        <option value="strawberry">Jahody</option>
+        <option value="orange">Pomeranče</option>
+      </select>
+    </label>
+
+    <label>Počet úloh
+      <input id="mathCount" type="number" min="2" max="40" value="12">
+    </label>
+  </div>
 
   <button id="generateBtn">Nový pracovní list</button>
   <button id="printBtn">Tisk</button>
@@ -402,7 +523,7 @@ function applyDefaultRange(clefMode) {
   rangeHigh.value = clefMode === 'grand' ? def.high : def.defaultHigh;
 }
 
-function render() {
+function renderMusicSheet() {
   const clefMode = document.getElementById('clefSelect').value;
   const exerciseType = document.getElementById('exerciseSelect').value;
   const rangeLow = document.getElementById('rangeLow').value;
@@ -441,12 +562,200 @@ function render() {
   }
 }
 
+/* ---------- matematika ---------- */
+
+const FRUITS = {
+  apple: '<path d="M50 32 C40 20, 20 24, 18 46 C16 70, 34 92, 50 92 C66 92, 84 70, 82 46 C80 24, 60 20, 50 32 Z" fill="#e05252"/>'
+       + '<path d="M50 32 C50 22, 51 14, 55 8" fill="none"/>'
+       + '<path d="M55 16 C64 6, 78 8, 82 14 C76 24, 61 26, 55 16 Z" fill="#5aa35a"/>',
+  pear: '<path d="M50 94 C31 94, 22 78, 31 63 C37 53, 41 47, 41 37 C41 25, 45 16, 50 16 C55 16, 59 25, 59 37 C59 47, 63 53, 69 63 C78 78, 69 94, 50 94 Z" fill="#c9d24a"/>'
+      + '<path d="M50 18 L50 7" fill="none"/>'
+      + '<path d="M52 13 C60 4, 73 6, 77 11 C71 19, 58 21, 52 13 Z" fill="#5aa35a"/>',
+  cherry: '<circle cx="32" cy="72" r="19" fill="#d43f3f"/>'
+        + '<circle cx="71" cy="76" r="16" fill="#d43f3f"/>'
+        + '<path d="M32 53 C34 34, 42 18, 56 12" fill="none"/>'
+        + '<path d="M71 60 C71 42, 64 22, 56 12" fill="none"/>'
+        + '<path d="M56 12 C64 2, 80 4, 84 10 C76 18, 62 20, 56 12 Z" fill="#5aa35a"/>',
+  strawberry: '<path d="M50 94 C30 82, 19 62, 24 46 C28 33, 40 27, 50 32 C60 27, 72 33, 76 46 C81 62, 70 82, 50 94 Z" fill="#e04a4a"/>'
+            + '<path d="M50 34 L33 22 L46 23 L39 10 L50 19 L61 10 L54 23 L67 22 Z" fill="#5aa35a"/>'
+            + '<circle cx="41" cy="54" r="3" fill="#fff" stroke="none"/>'
+            + '<circle cx="59" cy="54" r="3" fill="#fff" stroke="none"/>'
+            + '<circle cx="50" cy="68" r="3" fill="#fff" stroke="none"/>',
+  orange: '<circle cx="50" cy="57" r="34" fill="#f2a33c"/>'
+        + '<path d="M50 23 C52 15, 56 9, 62 7" fill="none"/>'
+        + '<path d="M50 21 C58 11, 72 11, 76 17 C70 27, 56 29, 50 21 Z" fill="#5aa35a"/>'
+};
+const FRUIT_KEYS = Object.keys(FRUITS);
+
+function randInt(min, max) {
+  return min + Math.floor(Math.random() * (max - min + 1));
+}
+
+function pickRandom(list) {
+  return list[randInt(0, list.length - 1)];
+}
+
+function fruitSvg(key, crossed) {
+  return '<svg class="fruit' + (crossed ? ' fruit-cut' : '') + '" viewBox="0 0 100 100">'
+    + '<g class="fruit-body">' + FRUITS[key] + '</g>'
+    + (crossed ? '<path class="fruit-cross" d="M16 16 L84 84 M84 16 L16 84"/>' : '')
+    + '</svg>';
+}
+
+function fruitPile(key, count, crossedFrom) {
+  let html = '<span class="fruit-pile">';
+  for (let i = 0; i < count; i++) {
+    html += fruitSvg(key, crossedFrom !== undefined && i >= crossedFrom);
+  }
+  return html + '</span>';
+}
+
+// Sčítání: obě hromádky aspoň jedna, součet nepřesáhne obor.
+function makeAddTask(max) {
+  const a = randInt(1, max - 1);
+  const b = randInt(1, max - a);
+  return { kind: 'add', a: a, b: b, result: a + b };
+}
+
+// Odčítání: výsledek zůstává kladný, aby nešel do záporných čísel.
+function makeSubTask(max) {
+  const a = randInt(2, max);
+  const b = randInt(1, a - 1);
+  return { kind: 'sub', a: a, b: b, result: a - b };
+}
+
+function makeSignTask(max) {
+  const base = Math.random() < 0.5 ? makeAddTask(max) : makeSubTask(max);
+  base.kind = 'sign';
+  return base;
+}
+
+function makeMathTask(type, max) {
+  if (type === 'add') return makeAddTask(max);
+  if (type === 'sub') return makeSubTask(max);
+  if (type === 'sign') return makeSignTask(max);
+  if (type === 'addsub') return Math.random() < 0.5 ? makeAddTask(max) : makeSubTask(max);
+  const roll = Math.random();
+  if (roll < 0.35) return makeAddTask(max);
+  if (roll < 0.7) return makeSubTask(max);
+  return makeSignTask(max);
+}
+
+// showMode: 'both' = ovoce i příklad, 'fruit' = jen ovoce, 'numbers' = jen příklad.
+// U doplňování znaménka se ovoce kreslí jen v režimu 'fruit' — v 'both' by
+// vznikly dva prázdné rámečky vedle sebe a úloha by přestala být čitelná.
+// subStyle: 'cross' = jedna hromádka s přeškrtnutými kusy, 'piles' = dvě hromádky
+// se znaménkem mínus (stejné schéma jako sčítání).
+function renderMathTask(task, index, fruitMode, showMode, subStyle) {
+  const el = document.createElement('div');
+  el.className = 'math-task';
+  const fruit = fruitMode === 'random' ? pickRandom(FRUIT_KEYS) : fruitMode;
+  const signFruit = task.kind === 'sign' && showMode === 'fruit';
+  const showFruit = showMode !== 'numbers' && (task.kind !== 'sign' || signFruit);
+  const showNumbers = showMode !== 'fruit';
+  let html = '<div class="math-task-no">' + (index + 1) + '.</div>';
+
+  if (showFruit) {
+    html += '<div class="fruit-line">';
+    if (task.kind === 'add') {
+      html += fruitPile(fruit, task.a) + '<span class="pile-op">+</span>' + fruitPile(fruit, task.b);
+    } else if (task.kind === 'sub') {
+      html += subStyle === 'piles'
+        ? fruitPile(fruit, task.a) + '<span class="pile-op">&minus;</span>' + fruitPile(fruit, task.b)
+        : fruitPile(fruit, task.a, task.a - task.b);
+    } else {
+      html += fruitPile(fruit, task.a) + '<span class="eq-box"></span>' + fruitPile(fruit, task.b);
+    }
+    html += '</div>';
+  }
+
+  if (showNumbers) {
+    if (task.kind === 'add') {
+      html += '<div class="math-eq">' + task.a + ' + ' + task.b + ' = <span class="eq-box"></span></div>';
+    } else if (task.kind === 'sub') {
+      html += '<div class="math-eq">' + task.a + ' &minus; ' + task.b + ' = <span class="eq-box"></span></div>';
+    } else {
+      html += '<div class="math-eq">' + task.a + ' <span class="eq-box"></span> ' + task.b + ' = ' + task.result + '</div>';
+    }
+  } else if (signFruit) {
+    html += '<div class="math-eq">= ' + fruitPile(fruit, task.result) + '</div>';
+  } else {
+    // Bez zadaných čísel doplňuje dítě celý zápis — kolik kusů je v jedné
+    // hromádce, kolik ve druhé a kolik jich vyjde. Samotný rámeček na výsledek
+    // by stačilo vyplnit spočítáním kusů, aniž by dítě počítalo příklad.
+    const op = task.kind === 'sub' ? '&minus;' : '+';
+    html += '<div class="math-eq"><span class="eq-box"></span> ' + op + ' <span class="eq-box"></span>'
+      + ' = <span class="eq-box"></span></div>';
+  }
+
+  el.innerHTML = html;
+  return el;
+}
+
+function mathSheetTitle(type, showMode) {
+  if (type === 'add') return 'Sčítání';
+  if (type === 'sub') return 'Odčítání';
+  if (type === 'sign') return 'Doplň znaménko + nebo &minus;';
+  if (type === 'addsub') return 'Sčítání a odčítání';
+  return showMode === 'numbers' ? 'Počítáme' : 'Počítáme s ovocem';
+}
+
+function renderMathSheet() {
+  const type = document.getElementById('mathTypeSelect').value;
+  const max = parseInt(document.getElementById('mathMaxSelect').value, 10) || 10;
+  const fruitMode = document.getElementById('mathFruitSelect').value;
+  const showMode = document.getElementById('mathShowSelect').value;
+  const subStyle = document.getElementById('mathSubStyleSelect').value;
+  const count = parseInt(document.getElementById('mathCount').value, 10) || 12;
+
+  const sheet = document.getElementById('sheet');
+  sheet.innerHTML = '';
+
+  const header = document.createElement('div');
+  header.className = 'sheet-header';
+  header.innerHTML = '<h1>' + mathSheetTitle(type, showMode) + ' &ndash; do ' + max + '</h1>'
+    + '<div class="fill-line">Jméno: ______________  Datum: __________</div>';
+  sheet.appendChild(header);
+
+  const grid = document.createElement('div');
+  grid.className = 'math-grid';
+  for (let i = 0; i < count; i++) {
+    grid.appendChild(renderMathTask(makeMathTask(type, max), i, fruitMode, showMode, subStyle));
+  }
+  sheet.appendChild(grid);
+}
+
+/* ---------- společné ovládání ---------- */
+
+function render() {
+  if (document.getElementById('subjectSelect').value === 'math') renderMathSheet();
+  else renderMusicSheet();
+}
+
 function updateCountVisibility() {
   const exerciseType = document.getElementById('exerciseSelect').value;
   const hide = exerciseType === 'blank' || exerciseType === 'traceClef';
   document.getElementById('countLabel').style.display = hide ? 'none' : '';
 }
 
+function updateFruitVisibility() {
+  const numbersOnly = document.getElementById('mathShowSelect').value === 'numbers';
+  const type = document.getElementById('mathTypeSelect').value;
+  const hasSub = type === 'sub' || type === 'addsub' || type === 'mix';
+  document.getElementById('mathFruitLabel').style.display = numbersOnly ? 'none' : '';
+  document.getElementById('mathSubLabel').style.display = numbersOnly || !hasSub ? 'none' : '';
+}
+
+function updateSubjectVisibility() {
+  const isMath = document.getElementById('subjectSelect').value === 'math';
+  document.getElementById('musicControls').hidden = isMath;
+  document.getElementById('mathControls').hidden = !isMath;
+}
+
+document.getElementById('subjectSelect').addEventListener('change', function () {
+  updateSubjectVisibility();
+  render();
+});
 document.getElementById('clefSelect').addEventListener('change', function () {
   applyDefaultRange(this.value);
   render();
@@ -458,6 +767,18 @@ document.getElementById('exerciseSelect').addEventListener('change', function ()
 document.getElementById('rangeLow').addEventListener('change', render);
 document.getElementById('rangeHigh').addEventListener('change', render);
 document.getElementById('noteCount').addEventListener('change', render);
+document.getElementById('mathTypeSelect').addEventListener('change', function () {
+  updateFruitVisibility();
+  render();
+});
+document.getElementById('mathSubStyleSelect').addEventListener('change', render);
+document.getElementById('mathMaxSelect').addEventListener('change', render);
+document.getElementById('mathShowSelect').addEventListener('change', function () {
+  updateFruitVisibility();
+  render();
+});
+document.getElementById('mathFruitSelect').addEventListener('change', render);
+document.getElementById('mathCount').addEventListener('change', render);
 document.getElementById('generateBtn').addEventListener('click', render);
 document.getElementById('printBtn').addEventListener('click', function () { window.print(); });
 
@@ -465,6 +786,8 @@ buildRangeOptions(document.getElementById('rangeLow'));
 buildRangeOptions(document.getElementById('rangeHigh'));
 applyDefaultRange('treble');
 updateCountVisibility();
+updateFruitVisibility();
+updateSubjectVisibility();
 render();
 </script>
 </body>
