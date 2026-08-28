@@ -100,8 +100,6 @@
     stroke-linejoin: round;
     stroke-linecap: round;
   }
-  .fruit-cut .fruit-body { opacity: .3; }
-  .fruit-cross { fill: none; stroke: #c62828; stroke-width: 8; }
   .pile-op { font-size: 28px; font-weight: bold; color: #333; padding: 0 2px; }
   .math-eq {
     display: flex;
@@ -192,13 +190,6 @@
         <option value="both" selected>Ovoce i čísla</option>
         <option value="fruit">Jen ovoce</option>
         <option value="numbers">Jen čísla</option>
-      </select>
-    </label>
-
-    <label id="mathSubLabel">Odčítání
-      <select id="mathSubStyleSelect">
-        <option value="cross" selected>Škrtání + doplň čísla</option>
-        <option value="piles">Dvě hromádky s mínus</option>
       </select>
     </label>
 
@@ -595,18 +586,13 @@ function pickRandom(list) {
   return list[randInt(0, list.length - 1)];
 }
 
-function fruitSvg(key, crossed) {
-  return '<svg class="fruit' + (crossed ? ' fruit-cut' : '') + '" viewBox="0 0 100 100">'
-    + '<g class="fruit-body">' + FRUITS[key] + '</g>'
-    + (crossed ? '<path class="fruit-cross" d="M16 16 L84 84 M84 16 L16 84"/>' : '')
-    + '</svg>';
+function fruitSvg(key) {
+  return '<svg class="fruit" viewBox="0 0 100 100"><g class="fruit-body">' + FRUITS[key] + '</g></svg>';
 }
 
-function fruitPile(key, count, crossedFrom) {
+function fruitPile(key, count) {
   let html = '<span class="fruit-pile">';
-  for (let i = 0; i < count; i++) {
-    html += fruitSvg(key, crossedFrom !== undefined && i >= crossedFrom);
-  }
+  for (let i = 0; i < count; i++) html += fruitSvg(key);
   return html + '</span>';
 }
 
@@ -644,9 +630,7 @@ function makeMathTask(type, max) {
 // showMode: 'both' = ovoce i příklad, 'fruit' = jen ovoce, 'numbers' = jen příklad.
 // U doplňování znaménka se ovoce kreslí jen v režimu 'fruit' — v 'both' by
 // vznikly dva prázdné rámečky vedle sebe a úloha by přestala být čitelná.
-// subStyle: 'cross' = jedna hromádka s přeškrtnutými kusy, 'piles' = dvě hromádky
-// se znaménkem mínus (stejné schéma jako sčítání).
-function renderMathTask(task, index, fruitMode, showMode, subStyle) {
+function renderMathTask(task, index, fruitMode, showMode) {
   const el = document.createElement('div');
   el.className = 'math-task';
   const fruit = fruitMode === 'random' ? pickRandom(FRUIT_KEYS) : fruitMode;
@@ -660,9 +644,7 @@ function renderMathTask(task, index, fruitMode, showMode, subStyle) {
     if (task.kind === 'add') {
       html += fruitPile(fruit, task.a) + '<span class="pile-op">+</span>' + fruitPile(fruit, task.b);
     } else if (task.kind === 'sub') {
-      html += subStyle === 'piles'
-        ? fruitPile(fruit, task.a) + '<span class="pile-op">&minus;</span>' + fruitPile(fruit, task.b)
-        : fruitPile(fruit, task.a, task.a - task.b);
+      html += fruitPile(fruit, task.a) + '<span class="pile-op">&minus;</span>' + fruitPile(fruit, task.b);
     } else {
       html += fruitPile(fruit, task.a) + '<span class="eq-box"></span>' + fruitPile(fruit, task.b);
     }
@@ -705,7 +687,6 @@ function renderMathSheet() {
   const max = parseInt(document.getElementById('mathMaxSelect').value, 10) || 10;
   const fruitMode = document.getElementById('mathFruitSelect').value;
   const showMode = document.getElementById('mathShowSelect').value;
-  const subStyle = document.getElementById('mathSubStyleSelect').value;
   const count = parseInt(document.getElementById('mathCount').value, 10) || 12;
 
   const sheet = document.getElementById('sheet');
@@ -720,7 +701,7 @@ function renderMathSheet() {
   const grid = document.createElement('div');
   grid.className = 'math-grid';
   for (let i = 0; i < count; i++) {
-    grid.appendChild(renderMathTask(makeMathTask(type, max), i, fruitMode, showMode, subStyle));
+    grid.appendChild(renderMathTask(makeMathTask(type, max), i, fruitMode, showMode));
   }
   sheet.appendChild(grid);
 }
@@ -740,10 +721,7 @@ function updateCountVisibility() {
 
 function updateFruitVisibility() {
   const numbersOnly = document.getElementById('mathShowSelect').value === 'numbers';
-  const type = document.getElementById('mathTypeSelect').value;
-  const hasSub = type === 'sub' || type === 'addsub' || type === 'mix';
   document.getElementById('mathFruitLabel').style.display = numbersOnly ? 'none' : '';
-  document.getElementById('mathSubLabel').style.display = numbersOnly || !hasSub ? 'none' : '';
 }
 
 function updateSubjectVisibility() {
@@ -767,11 +745,7 @@ document.getElementById('exerciseSelect').addEventListener('change', function ()
 document.getElementById('rangeLow').addEventListener('change', render);
 document.getElementById('rangeHigh').addEventListener('change', render);
 document.getElementById('noteCount').addEventListener('change', render);
-document.getElementById('mathTypeSelect').addEventListener('change', function () {
-  updateFruitVisibility();
-  render();
-});
-document.getElementById('mathSubStyleSelect').addEventListener('change', render);
+document.getElementById('mathTypeSelect').addEventListener('change', render);
 document.getElementById('mathMaxSelect').addEventListener('change', render);
 document.getElementById('mathShowSelect').addEventListener('change', function () {
   updateFruitVisibility();

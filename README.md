@@ -88,7 +88,7 @@ počítat po pěticích.
 | Typ | Co list obsahuje |
 |---|---|
 | Sčítání | Dvě hromádky ovoce se znaménkem `+` a příklad `a + b = ☐` |
-| Odčítání | Hromádka s přeškrtnutými kusy (nebo dvě hromádky s mínus — viz níže) a příklad `a − b = ☐` |
+| Odčítání | Dvě hromádky ovoce se znaménkem `−` a příklad `a − b = ☐` |
 | Sčítání i odčítání | Náhodný mix obou předchozích |
 | Doplň znaménko | Jen čísla — `a ☐ b = výsledek`, dítě doplní `+` nebo `−` |
 | Vše dohromady | Náhodný mix všech typů |
@@ -109,30 +109,6 @@ U typu **Doplň znaménko** se ovoce kreslí jen ve volbě „Jen ovoce" — hro
 a `b` s rámečkem mezi nimi a výsledná hromádka pod tím. Ve volbě „Ovoce i čísla"
 by vznikly dva prázdné rámečky vedle sebe a nebylo by poznat, do kterého se píše
 znaménko, proto tam zůstává jen číselný zápis.
-
-## Odčítání s ovocem
-
-Odčítání jde znázornit dvěma způsoby; přepínač **Odčítání** se objeví jen tehdy,
-když list nějaké odčítání obsahuje a zároveň se kreslí ovoce.
-
-| Volba | Jak úloha vypadá |
-|---|---|
-| Škrtání + doplň čísla | Jedna hromádka, posledních `b` kusů je přeškrtnutých. Obrázek odpovídá skutečné situaci — bylo `a` kusů, `b` se odebralo. |
-| Dvě hromádky s mínus | Hromádka `a`, znaménko `−`, hromádka `b` — stejné schéma jako u sčítání. Dítě opravdu odčítá, ale na papíře je dohromady víc kusů, než kolik je menšenec. |
-
-Ve volbě „Jen ovoce" má každá úloha trojici rámečků `☐ − ☐ = ☐`, respektive
-`☐ + ☐ = ☐`. Kdyby bylo zadání jen `= ☐`, stačilo by u odčítání spočítat
-nepřeškrtnuté kusy a k žádnému počítání příkladu by nedošlo. Takhle dítě doplní
-i obě počítaná čísla — kolik kusů bylo, kolik se přidalo nebo odebralo a kolik
-jich je nakonec.
-
-Úlohy se generují tak, aby výsledek nikdy nebyl záporný ani nula a aby součet
-nepřesáhl zvolený obor. Obě hromádky mají vždy aspoň jeden kus.
-
-Ovoce je kreslené vektorově přímo v `index.html` (inline SVG), takže se tiskne
-ostře v jakékoli velikosti a nepotřebuje žádné obrázkové soubory.
-
-Nad úlohami je hlavička s názvem cvičení a řádkem na jméno a datum.
 
 # Struktura projektu
 
