@@ -90,8 +90,18 @@ počítat po pěticích.
 | Sčítání | Dvě hromádky ovoce se znaménkem `+` a příklad `a + b = ☐` |
 | Odčítání | Dvě hromádky ovoce se znaménkem `−` a příklad `a − b = ☐` |
 | Sčítání i odčítání | Náhodný mix obou předchozích |
-| Doplň znaménko | Jen čísla — `a ☐ b = výsledek`, dítě doplní `+` nebo `−` |
+| Doplň znaménko | Dvě hromádky a zápis `☐ ◯ ☐ = výsledek` — dítě doplní obě čísla i znaménko `+` nebo `−` |
+| Doplň chybějící číslo | `3 + ☐ = 8` — chybí jeden ze sčítanců, v obrázku je na jeho místě otazník |
+| Rozklad čísla | Hromádka `n` kusů a zápis `n = ☐ + ☐`; správných řešení je víc |
+| Porovnávání | Dvě hromádky vedle sebe a zápis `☐ ◯ ☐` — dítě doplní obě čísla i znaménko `<`, `>`, `=` |
+| O kolik víc | Dvě hromádky pod sebou a otázka „O kolik víc?" |
 | Vše dohromady | Náhodný mix všech typů |
+
+Úlohy se generují tak, aby součet nepřesáhl zvolený obor a aby výsledek odčítání
+nikdy nešel do záporných čísel ani na nulu — záporná čísla se probírají mnohem
+později. Obě hromádky mají vždy aspoň jeden kus. Zhruba každá čtvrtá úloha na
+porovnávání má obě hromádky stejně velké, aby se rovnítko neztratilo mezi samými
+nerovnostmi.
 
 Volitelný je **číselný obor** (do 5, do 10, do 20), **znázornění**, **druh ovoce**
 (jablka, hrušky, třešně, jahody, pomeranče, nebo náhodně u každé úlohy) a **počet
@@ -102,13 +112,24 @@ Volitelný je **číselný obor** (do 5, do 10, do 20), **znázornění**, **dru
 | Volba | Co je na kartičce |
 |---|---|
 | Ovoce i čísla | Hromádky ovoce a pod nimi číselný příklad |
-| Jen ovoce | Pouze hromádky ovoce a prázdný zápis `☐ + ☐ = ☐` — dítě doplní i oba sčítance (menšence), čísla nikde nevidí předepsaná |
+| Jen ovoce | Pouze hromádky ovoce a prázdný zápis `☐ + ☐ = ☐` — dítě doplní i obě počítaná čísla, nikde je nemá předepsaná |
 | Jen čísla | Pouze číselný příklad, bez obrázků (výběr ovoce se skryje) |
 
-U typu **Doplň znaménko** se ovoce kreslí jen ve volbě „Jen ovoce" — hromádky `a`
-a `b` s rámečkem mezi nimi a výsledná hromádka pod tím. Ve volbě „Ovoce i čísla"
-by vznikly dva prázdné rámečky vedle sebe a nebylo by poznat, do kterého se píše
-znaménko, proto tam zůstává jen číselný zápis.
+Na kartičce je vždy jen jeden druh prázdného rámečku — buď se doplňuje do
+obrázku, nebo do číselného zápisu, nikdy obojí naráz. U typů, kde se doplňuje
+symbol (znaménko, porovnání), je proto ve volbě „Ovoce i čísla" rámeček jen
+v zápisu a hromádky nad ním slouží k počítání; ve volbě „Jen ovoce" je rámeček
+mezi hromádkami. U typu **Doplň chybějící číslo** je v obrázku na místě
+chybějícího členu otazník a rámeček je jen v zápisu.
+
+Hromádky, které nedělí znaménko (porovnávání, „o kolik víc"), jsou orámované
+tenkou čárkovanou linkou — zalomená hromádka by jinak splynula s tou vedle.
+
+Rámeček na znaménko je kolečko, rámeček na číslo čtvereček. U porovnávání
+a doplňování znaménka tak dítě s obrázkem doplňuje obojí — spočítá hromádky,
+zapíše obě čísla do čtverečků a mezi ně do kolečka doplní znaménko. Zadaný
+zůstává jen výsledek, ten z hromádek vyčíst nejde. Ve volbě „Jen čísla" jsou
+čísla zadaná, jinak by nebylo co porovnávat.
 
 # Struktura projektu
 

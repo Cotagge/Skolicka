@@ -100,7 +100,18 @@
     stroke-linejoin: round;
     stroke-linecap: round;
   }
+  /* Bez operátoru mezi hromádkami je potřeba je od sebe zřetelně oddělit,
+     jinak se zalomená hromádka slije s tou vedle. */
+  .fruit-line--split { gap: 18px; }
+  .fruit-line--split .fruit-pile, .fruit-line--stack .fruit-pile {
+    border: 1px dashed #ccc;
+    border-radius: 6px;
+    padding: 4px 5px;
+  }
+  .fruit-line--stack { flex-direction: column; align-items: flex-start; gap: 5px; }
   .pile-op { font-size: 28px; font-weight: bold; color: #333; padding: 0 2px; }
+  .math-task--wide { grid-column: 1 / -1; }
+  .math-eq--ask { font-size: 19px; flex-wrap: wrap; }
   .math-eq {
     display: flex;
     align-items: center;
@@ -115,6 +126,9 @@
     border: 2px dashed #999;
     border-radius: 6px;
   }
+  /* Kolečko patří znaménku, čtvereček číslu — jinak by na kartičce byly tři
+     stejné rámečky za sebou a nebylo by poznat, co se kam píše. */
+  .eq-box--sign { border-radius: 50%; border-style: dotted; }
 
   @media print {
     .controls { display: none; }
@@ -169,11 +183,21 @@
   <div class="ctrl-group" id="mathControls" hidden>
     <label>Typ úlohy
       <select id="mathTypeSelect">
-        <option value="add">Sčítání</option>
-        <option value="sub">Odčítání</option>
-        <option value="addsub" selected>Sčítání i odčítání</option>
-        <option value="sign">Doplň znaménko</option>
-        <option value="mix">Vše dohromady</option>
+        <optgroup label="Počítání">
+          <option value="add">Sčítání</option>
+          <option value="sub">Odčítání</option>
+          <option value="addsub" selected>Sčítání i odčítání</option>
+          <option value="sign">Doplň znaménko + &minus;</option>
+          <option value="missing">Doplň chybějící číslo</option>
+          <option value="decompose">Rozklad čísla</option>
+        </optgroup>
+        <optgroup label="Porovnávání">
+          <option value="compare">Porovnávání &lt; &gt; =</option>
+          <option value="diff">O kolik víc</option>
+        </optgroup>
+        <optgroup label="Dohromady">
+          <option value="mix">Vše dohromady</option>
+        </optgroup>
       </select>
     </label>
 
@@ -616,69 +640,151 @@ function makeSignTask(max) {
   return base;
 }
 
+// Porovnávání: zhruba každá čtvrtá úloha má obě hromádky stejné, aby dítě
+// nemohlo rovnítko odbýt jako výjimku, která se nikdy nevyskytuje.
+function makeCompareTask(max) {
+  const a = randInt(1, max);
+  const b = Math.random() < 0.25 ? a : randInt(1, max);
+  return { kind: 'compare', a: a, b: b };
+}
+
+// Rozklad nemá jediné správné řešení — dítě zvolí libovolnou dvojici sčítanců.
+function makeDecomposeTask(max) {
+  return { kind: 'decompose', n: randInt(3, max) };
+}
+
+// Chybí jeden ze sčítanců (menšenec nebo menšitel), výsledek je zadaný.
+function makeMissingTask(max) {
+  const base = Math.random() < 0.5 ? makeAddTask(max) : makeSubTask(max);
+  base.kind = 'missing';
+  base.op = base.result === base.a - base.b ? '-' : '+';
+  base.hole = Math.random() < 0.5 ? 'first' : 'second';
+  return base;
+}
+
+function makeDiffTask(max) {
+  const a = randInt(2, max);
+  const b = randInt(1, a - 1);
+  return { kind: 'diff', a: a, b: b, result: a - b };
+}
+
+const MIX_TYPES = ['add', 'sub', 'sign', 'missing', 'decompose', 'compare', 'diff'];
+
 function makeMathTask(type, max) {
   if (type === 'add') return makeAddTask(max);
   if (type === 'sub') return makeSubTask(max);
   if (type === 'sign') return makeSignTask(max);
+  if (type === 'compare') return makeCompareTask(max);
+  if (type === 'decompose') return makeDecomposeTask(max);
+  if (type === 'missing') return makeMissingTask(max);
+  if (type === 'diff') return makeDiffTask(max);
   if (type === 'addsub') return Math.random() < 0.5 ? makeAddTask(max) : makeSubTask(max);
-  const roll = Math.random();
-  if (roll < 0.35) return makeAddTask(max);
-  if (roll < 0.7) return makeSubTask(max);
-  return makeSignTask(max);
+  return makeMathTask(pickRandom(MIX_TYPES), max);
 }
 
 // showMode: 'both' = ovoce i příklad, 'fruit' = jen ovoce, 'numbers' = jen příklad.
-// U doplňování znaménka se ovoce kreslí jen v režimu 'fruit' — v 'both' by
-// vznikly dva prázdné rámečky vedle sebe a úloha by přestala být čitelná.
+// Prázdný rámeček je na kartičce vždy jen jeden druh: buď se doplňuje do obrázku
+// (režim „jen ovoce"), nebo do číselného zápisu. Nikdy obojí naráz — jinak by
+// nebylo poznat, co se kam píše.
 function renderMathTask(task, index, fruitMode, showMode) {
-  const el = document.createElement('div');
-  el.className = 'math-task';
   const fruit = fruitMode === 'random' ? pickRandom(FRUIT_KEYS) : fruitMode;
-  const signFruit = task.kind === 'sign' && showMode === 'fruit';
-  const showFruit = showMode !== 'numbers' && (task.kind !== 'sign' || signFruit);
-  const showNumbers = showMode !== 'fruit';
-  let html = '<div class="math-task-no">' + (index + 1) + '.</div>';
+  const withFruit = showMode !== 'numbers';
+  const withNumbers = showMode !== 'fruit';
+  const pile = function (n) { return fruitPile(fruit, n); };
+  const box = '<span class="eq-box"></span>';
+  const signBox = '<span class="eq-box eq-box--sign"></span>';
+  const op = function (sign) { return '<span class="pile-op">' + sign + '</span>'; };
 
-  if (showFruit) {
-    html += '<div class="fruit-line">';
-    if (task.kind === 'add') {
-      html += fruitPile(fruit, task.a) + '<span class="pile-op">+</span>' + fruitPile(fruit, task.b);
-    } else if (task.kind === 'sub') {
-      html += fruitPile(fruit, task.a) + '<span class="pile-op">&minus;</span>' + fruitPile(fruit, task.b);
-    } else {
-      html += fruitPile(fruit, task.a) + '<span class="eq-box"></span>' + fruitPile(fruit, task.b);
-    }
-    html += '</div>';
-  }
+  let fruitLine = '';
+  let fruitMod = '';
+  let eqLine = '';
+  let eqMod = '';
+  let wide = false;
 
-  if (showNumbers) {
-    if (task.kind === 'add') {
-      html += '<div class="math-eq">' + task.a + ' + ' + task.b + ' = <span class="eq-box"></span></div>';
-    } else if (task.kind === 'sub') {
-      html += '<div class="math-eq">' + task.a + ' &minus; ' + task.b + ' = <span class="eq-box"></span></div>';
+  if (task.kind === 'add' || task.kind === 'sub') {
+    const sign = task.kind === 'sub' ? '&minus;' : '+';
+    fruitLine = pile(task.a) + op(sign) + pile(task.b);
+    eqLine = withNumbers
+      ? task.a + ' ' + sign + ' ' + task.b + ' = ' + box
+      : box + ' ' + sign + ' ' + box + ' = ' + box;
+
+  } else if (task.kind === 'sign') {
+    fruitLine = withNumbers ? pile(task.a) + pile(task.b) : pile(task.a) + signBox + pile(task.b);
+    fruitMod = withNumbers ? ' fruit-line--split' : '';
+    if (withNumbers) {
+      // S obrázkem si dítě spočítá i obě čísla; zadaný zůstává jen výsledek,
+      // ten z hromádek vyčíst nejde a bez něj by znaménko nešlo určit.
+      eqLine = withFruit
+        ? box + ' ' + signBox + ' ' + box + ' = ' + task.result
+        : task.a + ' ' + signBox + ' ' + task.b + ' = ' + task.result;
     } else {
-      html += '<div class="math-eq">' + task.a + ' <span class="eq-box"></span> ' + task.b + ' = ' + task.result + '</div>';
+      eqLine = '= ' + pile(task.result);
     }
-  } else if (signFruit) {
-    html += '<div class="math-eq">= ' + fruitPile(fruit, task.result) + '</div>';
+
+  } else if (task.kind === 'compare') {
+    // S obrázkem si dítě spočítá i obě čísla, proto zůstávají prázdná;
+    // bez obrázku by nebylo co porovnávat, tak jsou zadaná.
+    fruitLine = withNumbers ? pile(task.a) + pile(task.b) : pile(task.a) + signBox + pile(task.b);
+    fruitMod = withNumbers ? ' fruit-line--split' : '';
+    if (withNumbers) {
+      eqLine = withFruit
+        ? box + ' ' + signBox + ' ' + box
+        : task.a + ' ' + signBox + ' ' + task.b;
+    }
+
+  } else if (task.kind === 'decompose') {
+    fruitLine = pile(task.n);
+    eqLine = (withNumbers ? task.n : box) + ' = ' + box + ' + ' + box;
+
+  } else if (task.kind === 'missing') {
+    // Chybějící člen je v obrázku otazník a v zápisu rámeček; v režimu „jen
+    // ovoce" se rámeček přesune do obrázku, protože žádný zápis není.
+    const sign = task.op === '-' ? '&minus;' : '+';
+    const hole = withNumbers ? op('?') : box;
+    const first = task.hole === 'first' ? hole : pile(task.a);
+    const second = task.hole === 'first' ? pile(task.b) : hole;
+    fruitLine = first + op(sign) + second + op('=') + pile(task.result);
+    if (withNumbers) {
+      const nFirst = task.hole === 'first' ? box : task.a;
+      const nSecond = task.hole === 'first' ? task.b : box;
+      eqLine = nFirst + ' ' + sign + ' ' + nSecond + ' = ' + task.result;
+    }
+    // Karta se roztáhne přes obě sloupce, jen když by se řada ovoce nevešla.
+    const shown = (task.hole === 'first' ? task.b : task.a) + task.result;
+    wide = withFruit && shown > 8;
+
   } else {
-    // Bez zadaných čísel doplňuje dítě celý zápis — kolik kusů je v jedné
-    // hromádce, kolik ve druhé a kolik jich vyjde. Samotný rámeček na výsledek
-    // by stačilo vyplnit spočítáním kusů, aniž by dítě počítalo příklad.
-    const op = task.kind === 'sub' ? '&minus;' : '+';
-    html += '<div class="math-eq"><span class="eq-box"></span> ' + op + ' <span class="eq-box"></span>'
-      + ' = <span class="eq-box"></span></div>';
+    fruitLine = pile(task.a) + pile(task.b);
+    fruitMod = ' fruit-line--stack';
+    // S obrázkem stačí krátká otázka — čísla si dítě přečte z hromádek.
+    eqLine = withFruit
+      ? 'O kolik víc? ' + box
+      : 'O kolik je ' + task.a + ' víc než ' + task.b + '? ' + box;
+    eqMod = ' math-eq--ask';
   }
 
+  const el = document.createElement('div');
+  el.className = 'math-task' + (wide ? ' math-task--wide' : '');
+  let html = '<div class="math-task-no">' + (index + 1) + '.</div>';
+  if (withFruit && fruitLine) html += '<div class="fruit-line' + fruitMod + '">' + fruitLine + '</div>';
+  if (eqLine) html += '<div class="math-eq' + eqMod + '">' + eqLine + '</div>';
   el.innerHTML = html;
   return el;
 }
 
+const MATH_TITLES = {
+  add: 'Sčítání',
+  sub: 'Odčítání',
+  addsub: 'Sčítání a odčítání',
+  sign: 'Doplň znaménko + nebo &minus;',
+  missing: 'Doplň chybějící číslo',
+  decompose: 'Rozklad čísla',
+  compare: 'Porovnávání &lt; &gt; =',
+  diff: 'O kolik víc?'
+};
+
 function mathSheetTitle(type, showMode) {
-  if (type === 'add') return 'Sčítání';
-  if (type === 'sub') return 'Odčítání';
-  if (type === 'sign') return 'Doplň znaménko + nebo &minus;';
-  if (type === 'addsub') return 'Sčítání a odčítání';
+  if (MATH_TITLES[type]) return MATH_TITLES[type];
   return showMode === 'numbers' ? 'Počítáme' : 'Počítáme s ovocem';
 }
 
