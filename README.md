@@ -91,7 +91,7 @@ počítat po pěticích.
 | Odčítání | Dvě hromádky ovoce se znaménkem `−` a příklad `a − b = ☐` |
 | Sčítání i odčítání | Náhodný mix obou předchozích |
 | Doplň znaménko | Dvě hromádky a zápis `☐ ◯ ☐ = výsledek` — dítě doplní obě čísla i znaménko `+` nebo `−` |
-| Doplň chybějící číslo | `3 + ☐ = 8` — chybí jeden ze sčítanců, v obrázku je na jeho místě otazník |
+| Doplň chybějící číslo | `3 + ☐ = 8` nebo `☐ − 3 = 5` — chybí jeden ze dvou počítaných členů, výsledek je zadaný |
 | Rozklad čísla | Hromádka `n` kusů a zápis `n = ☐ + ☐`; správných řešení je víc |
 | Porovnávání | Dvě hromádky vedle sebe a zápis `☐ ◯ ☐` — dítě doplní obě čísla i znaménko `<`, `>`, `=` |
 | O kolik víc | Dvě hromádky pod sebou a otázka „O kolik víc?" |
@@ -120,7 +120,8 @@ obrázku, nebo do číselného zápisu, nikdy obojí naráz. U typů, kde se dop
 symbol (znaménko, porovnání), je proto ve volbě „Ovoce i čísla" rámeček jen
 v zápisu a hromádky nad ním slouží k počítání; ve volbě „Jen ovoce" je rámeček
 mezi hromádkami. U typu **Doplň chybějící číslo** je v obrázku na místě
-chybějícího členu otazník a rámeček je jen v zápisu.
+chybějícího členu otazník a rámeček je jen v zápisu; ve volbě „Jen ovoce" žádný
+zápis není, takže se rámeček přesune přímo do obrázku.
 
 Hromádky, které nedělí znaménko (porovnávání, „o kolik víc"), jsou orámované
 tenkou čárkovanou linkou — zalomená hromádka by jinak splynula s tou vedle.
