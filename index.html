@@ -66,20 +66,51 @@
     justify-content: space-between;
     align-items: baseline;
     border-bottom: 2px solid #333;
-    padding-bottom: 6px;
-    margin-bottom: 18px;
+    padding-bottom: 5px;
+    margin-bottom: 12px;
   }
   .sheet-header h1 { font-size: 18px; margin: 0; }
   .sheet-header .fill-line { font-size: 13px; color: #444; }
+  /* Velikosti jsou v proměnných, aby list vyšel na jednu A4 i u větších
+     číselných oborů, kde je na kartičce mnohem víc kusů ovoce. */
+  #sheet {
+    --fruit-size: 22px;
+    --fruit-gap: 3px;
+    --eq-size: 24px;
+    --box-size: 31px;
+    /* Typy, které mají v obrázku dvě řady hromádek, potřebují menší ovoce
+       a delší řadu, jinak se dvanáct úloh na jednu A4 nevejde. */
+    --fruit-dense: 17px;
+    --pile-cols: 5;
+  }
+  #sheet[data-range="5"] { --fruit-size: 26px; --fruit-dense: 20px; }
+  #sheet[data-range="20"] {
+    --fruit-size: 15px;
+    --fruit-dense: 12px;
+    --eq-size: 20px;
+    --box-size: 26px;
+  }
+  .fruit-line--rows, .fruit-line--stack {
+    --fruit-size: var(--fruit-dense);
+    --pile-cols: 10;
+  }
+  /* Dvě hromádky vedle sebe by v oboru do 20 zabraly čtyři řady po pěti;
+     po sedmi vyjdou na tři a kartička se vejde na stránku. */
+  #sheet[data-range="20"] .fruit-line--split { --pile-cols: 7; }
+  /* Doplňování znaménka bez čísel ukazuje tři hromádky včetně výsledku. */
+  .math-task--dense {
+    --fruit-size: var(--fruit-dense);
+    --pile-cols: 7;
+  }
   .math-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 14px 18px;
+    gap: 6px 14px;
   }
   .math-task {
     border: 1px solid #ccc;
     border-radius: 8px;
-    padding: 8px 12px 12px;
+    padding: 5px 9px 7px;
     page-break-inside: avoid;
     break-inside: avoid;
   }
@@ -88,13 +119,18 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    min-height: 44px;
+    min-height: calc(var(--fruit-size) + 6px);
   }
-  /* max-width drží nejvýš pět kusů v řadě, další se zalomí pod sebe */
-  .fruit-pile { display: flex; gap: 3px; flex-wrap: wrap; max-width: 152px; }
+  /* max-width drží v řadě nejvýš --pile-cols kusů, další se zalomí pod sebe */
+  .fruit-pile {
+    display: flex;
+    gap: var(--fruit-gap);
+    flex-wrap: wrap;
+    max-width: calc(var(--pile-cols) * var(--fruit-size) + (var(--pile-cols) - 1) * var(--fruit-gap));
+  }
   .fruit {
-    width: 28px;
-    height: 28px;
+    width: var(--fruit-size);
+    height: var(--fruit-size);
     stroke: #333;
     stroke-width: 3;
     stroke-linejoin: round;
@@ -106,23 +142,27 @@
   .fruit-line--split .fruit-pile, .fruit-line--stack .fruit-pile {
     border: 1px dashed #ccc;
     border-radius: 6px;
-    padding: 4px 5px;
+    padding: 2px 4px;
+    /* box-sizing je border-box, takže rámeček a odsazení ukrajují z max-width —
+       bez tohoto navýšení by se do řady vešly jen čtyři kusy místo pěti. */
+    max-width: calc(var(--pile-cols) * var(--fruit-size) + (var(--pile-cols) - 1) * var(--fruit-gap) + 10px);
   }
   .fruit-line--stack { flex-direction: column; align-items: flex-start; gap: 5px; }
-  .pile-op { font-size: 28px; font-weight: bold; color: #333; padding: 0 2px; }
-  .math-task--wide { grid-column: 1 / -1; }
-  .math-eq--ask { font-size: 19px; flex-wrap: wrap; }
+  .fruit-line--rows { flex-direction: column; align-items: flex-start; gap: 6px; }
+  .fruit-row { display: flex; align-items: center; gap: 10px; }
+  .pile-op { font-size: var(--eq-size); font-weight: bold; color: #333; padding: 0 2px; }
   .math-eq {
     display: flex;
     align-items: center;
     gap: 8px;
-    margin-top: 8px;
-    font-size: 30px;
+    margin-top: 5px;
+    font-size: var(--eq-size);
     font-weight: bold;
   }
+  .math-eq--ask { font-size: calc(var(--eq-size) - 8px); flex-wrap: wrap; }
   .eq-box {
-    width: 42px;
-    height: 42px;
+    width: var(--box-size);
+    height: var(--box-size);
     border: 2px dashed #999;
     border-radius: 6px;
   }
@@ -229,7 +269,7 @@
     </label>
 
     <label>Počet úloh
-      <input id="mathCount" type="number" min="2" max="40" value="12">
+      <input id="mathCount" type="number" min="2" max="40" value="14">
     </label>
   </div>
 
@@ -690,7 +730,7 @@ function renderMathTask(task, index, fruitMode, showMode) {
   const fruit = fruitMode === 'random' ? pickRandom(FRUIT_KEYS) : fruitMode;
   const withFruit = showMode !== 'numbers';
   const withNumbers = showMode !== 'fruit';
-  const pile = function (n) { return fruitPile(fruit, n); };
+  const pile = function (n) { return withFruit ? fruitPile(fruit, n) : ''; };
   const box = '<span class="eq-box"></span>';
   const signBox = '<span class="eq-box eq-box--sign"></span>';
   const op = function (sign) { return '<span class="pile-op">' + sign + '</span>'; };
@@ -699,7 +739,7 @@ function renderMathTask(task, index, fruitMode, showMode) {
   let fruitMod = '';
   let eqLine = '';
   let eqMod = '';
-  let wide = false;
+  let taskMod = '';
 
   if (task.kind === 'add' || task.kind === 'sub') {
     const sign = task.kind === 'sub' ? '&minus;' : '+';
@@ -719,6 +759,7 @@ function renderMathTask(task, index, fruitMode, showMode) {
         : task.a + ' ' + signBox + ' ' + task.b + ' = ' + task.result;
     } else {
       eqLine = '= ' + pile(task.result);
+      taskMod = ' math-task--dense';
     }
 
   } else if (task.kind === 'compare') {
@@ -743,15 +784,16 @@ function renderMathTask(task, index, fruitMode, showMode) {
     const hole = withNumbers ? op('?') : box;
     const first = task.hole === 'first' ? hole : pile(task.a);
     const second = task.hole === 'first' ? pile(task.b) : hole;
-    fruitLine = first + op(sign) + second + op('=') + pile(task.result);
+    // Tři prvky vedle sebe se do sloupce nevejdou, proto jde výsledek na
+    // samostatný řádek — kartička si tak udrží šířku jako všechny ostatní.
+    fruitLine = '<span class="fruit-row">' + first + op(sign) + second + '</span>'
+      + '<span class="fruit-row">' + op('=') + pile(task.result) + '</span>';
+    fruitMod = ' fruit-line--rows';
     if (withNumbers) {
       const nFirst = task.hole === 'first' ? box : task.a;
       const nSecond = task.hole === 'first' ? task.b : box;
       eqLine = nFirst + ' ' + sign + ' ' + nSecond + ' = ' + task.result;
     }
-    // Karta se roztáhne přes obě sloupce, jen když by se řada ovoce nevešla.
-    const shown = (task.hole === 'first' ? task.b : task.a) + task.result;
-    wide = withFruit && shown > 8;
 
   } else {
     fruitLine = pile(task.a) + pile(task.b);
@@ -764,7 +806,7 @@ function renderMathTask(task, index, fruitMode, showMode) {
   }
 
   const el = document.createElement('div');
-  el.className = 'math-task' + (wide ? ' math-task--wide' : '');
+  el.className = 'math-task' + taskMod;
   let html = '<div class="math-task-no">' + (index + 1) + '.</div>';
   if (withFruit && fruitLine) html += '<div class="fruit-line' + fruitMod + '">' + fruitLine + '</div>';
   if (eqLine) html += '<div class="math-eq' + eqMod + '">' + eqLine + '</div>';
@@ -793,10 +835,11 @@ function renderMathSheet() {
   const max = parseInt(document.getElementById('mathMaxSelect').value, 10) || 10;
   const fruitMode = document.getElementById('mathFruitSelect').value;
   const showMode = document.getElementById('mathShowSelect').value;
-  const count = parseInt(document.getElementById('mathCount').value, 10) || 12;
+  const count = parseInt(document.getElementById('mathCount').value, 10) || 14;
 
   const sheet = document.getElementById('sheet');
   sheet.innerHTML = '';
+  sheet.dataset.range = max;
 
   const header = document.createElement('div');
   header.className = 'sheet-header';
